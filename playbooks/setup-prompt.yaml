@@ -1,0 +1,53 @@
+## DOESN"T CURRENTLY WORK
+
+# run with '--ask-become-pass' to provide sudo password
+
+# installing the dotfiles registers as 'changed' even if that probably isn't
+# the case...
+
+---
+- name: Setup Prompt 
+  hosts: all
+  tasks:
+    # install git
+    - name: Install Git
+      become: yes
+      apt:
+        name: git
+
+    - name: account $HOME
+      shell: "echo $HOME"
+      register: account_homedir
+      changed_when: false
+      check_mode: no
+
+    # install dotfiles from GitHub
+    - name: Install Homeshick
+      ansible.builtin.git:
+        repo: git://github.com/andsens/homeshick.git
+        dest: $HOME/.homesick/repos/homeshick
+
+    # - name: Source Homeshick
+    #   command: sh source "$HOME/.homesick/repos/homeshick/homeshick.sh"
+
+    - name: Install (basic) DotFiles
+      command: sh "source $HOME/.homesick/repos/homeshick/homeshick.sh && homeshick clone https://github.com/MinchinWeb/dotfiles.git"
+
+    - name: Install Liquid Prompt
+      command: sh "source $HOME/.homesick/repos/homeshick/homeshick.sh && homeshick clone https://github.com/nojhan/liquidprompt.git"
+
+    - name: Install Bash Sensible
+      command: sh "source $HOME/.homesick/repos/homeshick/homeshick.sh && homeshick clone https://github.com/mrzool/bash-sensible.git"
+
+    - name: Install Ubuntu Dotfiles
+      command: sh "source $HOME/.homesick/repos/homeshick/homeshick.sh && homeshick clone https://github.com/MinchinWeb/dotfiles-sorbonne.git"
+
+    - name: Install NeoFetch
+      become: yes
+      apt:
+        name: neofetch
+
+    - name: Install AnsiWeather
+      become: yes
+      apt:
+        name: ansiweather
