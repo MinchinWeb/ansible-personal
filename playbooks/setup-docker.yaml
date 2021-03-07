@@ -1,5 +1,6 @@
 # TODO: user is hardcoded
 
+# see https://docs.docker.com/engine/install/ubuntu/
 # see also https://github.com/do-community/ansible-playbooks/blob/master/docker_ubuntu1804/playbook.yml
 
 - name: Setup and Configure Docker
@@ -31,9 +32,9 @@
         - apt-transport-https
         - ca-certificates
         - curl
-        - software-properties-common
+        # - software-properties-common
       state: latest
-      update_cache: yes
+      update_cache: no
 
   - name: Add Docker GPG apt Key
     apt_key:
@@ -44,6 +45,7 @@
     apt_repository:
       repo: deb https://download.docker.com/linux/ubuntu focal stable
       state: present
+      update_cache: yes
 
   - name: Install Docker
     apt:
@@ -51,8 +53,20 @@
         - docker-ce
         - docker-ce-cli
         - containerd.io
-      update_cache: yes
+      update_cache: no
       state: latest
+
+  - name: Install Docker-Compose
+    apt:
+      pkg: docker-compose
+      update_cache: no
+      state: latest
+
+  - name: Create docker User
+    user:
+      name: docker
+      group: docker
+      state: present
 
   # sudo groupadd docker
   - name: Create Docker User Group
