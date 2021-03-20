@@ -1,0 +1,111 @@
+# setup NAS drives so they are avialble on the Docker host
+#
+# requires separate `.smbcreditials` file
+
+# note: hardcodes docker username
+
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/posix/mount_module.html
+# https://stackoverflow.com/questions/60414055/how-can-i-find-the-user-id-using-ansible-and-use-that-in-a-jinja2-template
+# ansible-galaxy collection install ansible.posix
+
+- name: Mount NAS drives for Docker use
+  hosts: all
+  become: yes
+  vars:
+    samba_mount_user: 'docker'
+    # samba_mount_pass:
+  vars_prompt:
+    - name: samba_mount_pass
+      prompt: Samba (Remote) user password?
+      private: yes
+      unsafe: yes
+    
+  tasks:
+    - name: Get docker User Information
+      getent:
+        database: passwd
+        key: docker
+    - debug:
+        # var: getent_passwd
+        msg:
+          - "docker uid: {{ getent_passwd['docker'].1 }}"
+          - "docker gid: {{ getent_passwd['docker'].2 }}"
+          - "docker home: {{ getent_passwd['docker'].4 }}"
+
+    - name: Install CIFS and Other Required Packages for Mounting
+      apt:
+        pkg:
+          - cifs-utils
+        state: latest
+        update_cache: no
+
+    - name: Place Samba Credentials File
+      template:
+        src: .smbcredentials.j2
+        dest: "{{ getent_passwd['docker'].4 }}/.smbcredentials"
+        owner: docker
+        group: docker
+        mode: 0600
+        backup: yes
+
+    - name: Create a Mount Directories (If It Does Not Exist)
+      ansible.builtin.file:
+        path: "/mnt/baffinisland/{{ item }}"
+        owner: docker
+        group: docker
+        state: directory
+        mode: 0755
+      loop:
+        - home
+        - video
+        - photo
+        - ebook
+        - music
+
+    - name: setup NAS home
+      ansible.posix.mount:
+        backup: yes
+        src: //baffinisland/home
+        path: /mnt/baffinisland/home
+        fstype: cifs
+        opts: credentials={{ getent_passwd['docker'].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd['docker'].1 }},gid={{ getent_passwd['docker'].2 }}
+        state: present
+
+    - name: setup NAS videos
+      ansible.posix.mount:
+        src: //baffinisland/video
+        path: /mnt/baffinisland/video
+        fstype: cifs
+        opts: credentials={{ getent_passwd['docker'].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd['docker'].1 }},gid={{ getent_passwd['docker'].2 }}
+        state: present
+
+    - name: setup NAS photos
+      ansible.posix.mount:
+        src: //baffinisland/photo
+        path: /mnt/baffinisland/photo
+        fstype: cifs
+        opts: credentials={{ getent_passwd['docker'].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd['docker'].1 }},gid={{ getent_passwd['docker'].2 }}
+        state: present
+
+    - name: setup NAS ebooks
+      ansible.posix.mount:
+        src: //baffinisland/ebook
+        path: /mnt/baffinisland/ebook
+        fstype: cifs
+        opts: credentials={{ getent_passwd['docker'].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd['docker'].1 }},gid={{ getent_passwd['docker'].2 }}
+        state: present
+
+    - name: setup NAS music
+      ansible.posix.mount:
+        src: //baffinisland/music
+        path: /mnt/baffinisland/music
+        fstype: cifs
+        opts: credentials={{ getent_passwd['docker'].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd['docker'].1 }},gid={{ getent_passwd['docker'].2 }}
+        state: present
+
+    - name: mount all
+      command: mount -a
+      args:
+        warn: no
+      become: true
