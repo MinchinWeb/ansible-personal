@@ -11,3 +11,7 @@ single item list and works.
 
 The "Become" passwork is the passwork used on the remote machine to run sudo
 commands.
+
+To run it locally (on WSL):
+
+    ansible-playbook /mnt/e/Code/ansible-personal/playbooks/setup-ubuntu.yaml -i "localhost," --connection=local --ask-become-pass
