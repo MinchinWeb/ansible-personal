@@ -5,6 +5,10 @@
 
 ---
 
+- name: Get Local Hostname
+  local_action: command hostname
+  register: hostname
+  
 - name: Select key files
   set_fact:
     wsl_key_file="/home/{{ local_user | lower }}/.ssh/id_ed25519.pub"
@@ -12,6 +16,7 @@
 
 - debug:
     msg:
+      - "Local Hostname : {{ hostname.stdout }}"
       - "Windows key file: {{ windows_key_file }}"
       - "WSL key file: {{ wsl_key_file }}"
 
@@ -21,7 +26,7 @@
     user: "{{ local_user | lower }}"
     state: present
     key: "{{ lookup('file', wsl_key_file) }}"
-    comment: "{{ local_user | lower }}+wsl@le-treport.lan"
+    comment: "{{ local_user | lower }}+wsl@{{ hostname.stdout }}"
 
 - name: Set up 'normal' authorized SSH key
   ansible.posix.authorized_key:
@@ -29,4 +34,4 @@
     user: "{{ local_user | lower }}"
     state: present
     key: "{{ lookup('file', windows_key_file) }}"
-    comment: "{{ local_user | lower }}@le-treport.lan"
+    comment: "{{ local_user | lower }}@{{ hostname.stdout }}"
