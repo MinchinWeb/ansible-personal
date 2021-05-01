@@ -1,0 +1,78 @@
+# TODO: user is hardcoded
+
+# see https://docs.docker.com/engine/install/ubuntu/
+# see also https://github.com/do-community/ansible-playbooks/blob/master/docker_ubuntu1804/playbook.yml
+
+- name: Uninstall old versions of Docker
+  become: true
+  apt:
+    pkg:
+      - docker
+      - ocker-engine
+      - docker.io
+      - containerd
+      - runc
+    state: absent
+
+- name: Install aptitude using apt
+  apt:
+    pkg: aptitude
+    state: latest
+    update_cache: yes
+    # force_apt_get: yes
+
+- name: Install required system packages
+  apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      # - software-properties-common
+    state: latest
+    update_cache: no
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu focal stable
+    state: present
+    update_cache: yes
+
+- name: Install Docker
+  apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    update_cache: no
+    state: latest
+
+- name: Install Docker-Compose
+  apt:
+    pkg: docker-compose
+    update_cache: no
+    state: latest
+
+- name: Create docker User
+  user:
+    name: docker
+    group: docker
+    state: present
+
+# sudo groupadd docker
+- name: Create Docker User Group
+  ansible.builtin.group:
+    name: docker
+    state: present
+    # can also specifc a gid
+
+# sudo usermod -aG docker <your-user>
+- name: Add User to Docker Group
+  user:
+    name: "{{ non_docker_user }}"
+    groups: docker
+    append: yes

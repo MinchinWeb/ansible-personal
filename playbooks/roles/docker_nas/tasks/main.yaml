@@ -1,0 +1,98 @@
+# setup NAS drives so they are avialble on the Docker host
+#
+# requires separate `.smbcreditials` file
+
+# note: hardcodes docker username
+
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/posix/mount_module.html
+# https://stackoverflow.com/questions/60414055/how-can-i-find-the-user-id-using-ansible-and-use-that-in-a-jinja2-template
+# ansible-galaxy collection install ansible.posix
+
+- name: Get docker User Information
+  getent:
+    database: passwd
+    key: "{{ mount_local_user }}"
+
+- debug:
+    msg:
+      - "{{ mount_local_user }} uid: {{ getent_passwd[mount_local_user].1 }}"
+      - "{{ mount_local_user }} gid: {{ getent_passwd[mount_local_user].2 }}"
+      - "{{ mount_local_user }} home: {{ getent_passwd[mount_local_user].4 }}"
+
+- name: Install CIFS and Other Required Packages for Mounting
+  apt:
+    pkg:
+      - cifs-utils
+    state: latest
+    update_cache: no
+
+- name: Place Samba Credentials File
+  template:
+    src: .smbcredentials.j2
+    dest: "{{ getent_passwd[mount_local_user].4 }}/.smbcredentials"
+    owner: "{{ mount_local_user }}"
+    group: "{{ getent_passwd[mount_local_user].2 }}"
+    mode: 0600
+    backup: yes
+
+- name: Create a Mount Directories (If It Does Not Exist)
+  ansible.builtin.file:
+    path: "/mnt/{{ nas_hostname }}/{{ item }}"
+    owner: "{{ mount_local_user }}"
+    group: "{{ getent_passwd[mount_local_user].2 }}"
+    state: directory
+    mode: 0755
+  loop:
+    - home
+    - video
+    - photo
+    - ebook
+    - music
+
+- name: setup NAS home
+  ansible.posix.mount:
+    backup: yes
+    src: "//{{ nas_hostname }}/home"
+    path: "/mnt/{{ nas_hostname }}/home"
+    fstype: cifs
+    opts: credentials={{ getent_passwd[mount_local_user].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd[mount_local_user].1 }},gid={{ getent_passwd[mount_local_user].2 }}
+    state: present
+
+- name: setup NAS videos
+  ansible.posix.mount:
+    src: "//{{ nas_hostname }}/video"
+    path: "/mnt/{{ nas_hostname }}/video"
+    fstype: cifs
+    opts: credentials={{ getent_passwd[mount_local_user].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd[mount_local_user].1 }},gid={{ getent_passwd[mount_local_user].2 }}
+    state: present
+
+- name: setup NAS photos
+  ansible.posix.mount:
+    src: "//{{ nas_hostname }}/photo"
+    path: "/mnt/{{ nas_hostname }}/photo"
+    fstype: cifs
+    opts: credentials={{ getent_passwd[mount_local_user].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd[mount_local_user].1 }},gid={{ getent_passwd[mount_local_user].2 }}
+    state: present
+
+- name: setup NAS ebooks
+  ansible.posix.mount:
+    src: "//{{ nas_hostname }}/ebook"
+    path: "/mnt/{{ nas_hostname }}/ebook"
+    fstype: cifs
+    opts: credentials={{ getent_passwd[mount_local_user].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd[mount_local_user].1 }},gid={{ getent_passwd[mount_local_user].2 }}
+    state: present
+
+- name: setup NAS music
+  ansible.posix.mount:
+    src: "//{{ nas_hostname }}/music"
+    path: "/mnt/{{ nas_hostname }}/music"
+    fstype: cifs
+    opts: credentials={{ getent_passwd[mount_local_user].4 }}/.smbcredentials,vers=3.0,uid={{ getent_passwd[mount_local_user].1 }},gid={{ getent_passwd[mount_local_user].2 }}
+    state: present
+
+- name: mount all
+  command: mount -a
+  args:
+    warn: no
+  become: true

@@ -5,20 +5,14 @@
 
 ---
 - name: Setup SSH keys
-  hosts: all
-  tasks:
+  hosts: remote
 
-    - name: Set up WSL authorized SSH key
-      ansible.posix.authorized_key:
-        # user on remote host
-        user: william
-        state: present
-        key: "{{ lookup('file', '/home/william/.ssh/id_ed25519.pub') }}"
+  vars_prompt:
+  - name: local_user
+    prompt: Local (Windows) username
+    default: William
+    private: no
+    unsafe: no
 
-    - name: Set up 'normal' authorized SSH key
-      ansible.posix.authorized_key:
-        # user on remote host
-        user: william
-        state: present
-        key: "{{ lookup('file', '/mnt/c/Users/William/.ssh/id_ed25519.pub') }}"
-        comment: 'william@le-treport.lan'
+  roles:
+    - role: ssh_keys
