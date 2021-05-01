@@ -1,0 +1,48 @@
+- name: Setup and Configure Docker
+  hosts: docker
+  become: yes
+
+  vars_prompt:
+  # for ssk_keys role
+  - name: local_user
+    prompt: Local (Windows) username
+    default: William
+    private: no
+    unsafe: no
+
+  # for docker role
+  - name: non_docker_user
+    prompt: Non-docker (Remote) user
+    default: william
+    private: no
+    unsafe: no
+
+  # for docker_nas role
+  - name: mount_local_user
+    prompt: Mount (Remote) user
+    default: docker
+    private: no
+    unsafe: no
+
+  - name: nas_hostname
+    prompt: NAS Hostname
+    default: baffinisland
+    private: no
+    unsafe: no
+
+  - name: samba_mount_user
+    prompt: Samba Mount User
+    default: docker
+    private: no
+    unsafe: no
+
+  - name: samba_mount_pass
+    prompt: Samba Mount Password
+    # default: baffinisland
+    private: yes
+    unsafe: yes
+
+  roles:
+    - role: docker
+    - role: docker_nas
+    - role: ssh_keys
