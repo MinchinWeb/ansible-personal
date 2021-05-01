@@ -1,7 +1,4 @@
-- name: Setup and Configure Docker
-  hosts: docker
-  become: yes
-
+- name: Ansible Setup
   vars_prompt:
   # for ssk_keys role
   - name: local_user
@@ -42,7 +39,21 @@
     private: yes
     unsafe: yes
 
+- name: Setup and Configure Docker
+  hosts: docker
+  become: yes
+
   roles:
     - role: docker
     - role: docker_nas
+
+- name: Copy SSH Keys
+  hosts: remote
+  # become: yes
+  roles:
     - role: ssh_keys
+
+- name: Ubuntu Setup
+  hosts: ubuntu
+  roles:
+    - role: ubuntu
