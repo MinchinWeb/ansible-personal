@@ -11,6 +11,7 @@
 
 - name: Mount NAS drives for Docker use
   hosts: docker
+  # hosts: all
   become: yes
 
   vars_prompt:

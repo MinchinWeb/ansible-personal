@@ -5,6 +5,7 @@
 
 - name: Setup and Configure Docker
   hosts: docker
+  # hosts: all
   become: yes
   vars_prompt:
   - name: non_docker_user
